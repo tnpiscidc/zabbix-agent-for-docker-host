@@ -3,7 +3,7 @@ Zabbix Agent Container for Docker host.
 
 # How to use this image
 
-## Start `zabbix-agent-for docker-host`
+## Start `zabbix-agent-for-docker-host`
 
 Start a Zabbix agent container as follows:
 ```console
@@ -15,7 +15,7 @@ $ docker run --name some-zabbix-agent  -d --p10050:10050 -u 0 \
   -v /dev:/dockerhost/dev:ro \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e ZBX_HOSTNAME="some-hostname" \
-  -e ZBX_SERVER_HOST="" \
+  -e ZBX_SERVER_HOST="some-zabbix-server" \
   tnpiscidc/zabbix-agent-for-docker-host
 ```
 
