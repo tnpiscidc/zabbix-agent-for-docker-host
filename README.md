@@ -24,9 +24,11 @@ $ docker run --name some-zabbix-agent  -d --p10050:10050 -u 0 \
 When you start the zabbix-agent image, you can adjust the configuration of the Zabbix agent by passing one or more environment variables on the docker run command line.
 
 Please see below for details.
+
 https://github.com/zabbix/zabbix-docker/blob/3.0/agent/centos/README.md#environment-variables
 
 
 # References
 https://github.com/zabbix/zabbix-docker
+
 https://github.com/monitoringartist/zabbix-docker-monitoring
