@@ -1,0 +1,571 @@
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/boottime.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/boottime.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/boottime.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/boottime.c	2019-06-18 09:30:31.490081320 +0000
+@@ -28,9 +28,9 @@ int	SYSTEM_BOOTTIME(AGENT_REQUEST *reque
+ 	int		ret = SYSINFO_RET_FAIL;
+ 	unsigned long	value;
+ 
+-	if (NULL == (f = fopen("/proc/stat", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/stat", "r")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/stat: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/stat: %s", zbx_strerror(errno)));
+ 		return ret;
+ 	}
+ 
+@@ -49,7 +49,7 @@ int	SYSTEM_BOOTTIME(AGENT_REQUEST *reque
+ 	zbx_fclose(f);
+ 
+ 	if (SYSINFO_RET_FAIL == ret)
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"btime\" in /proc/stat."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"btime\" in /dockerhost/proc/stat."));
+ 
+ 	return ret;
+ }
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/cpu.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/cpu.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/cpu.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/cpu.c	2019-06-18 09:32:26.432822198 +0000
+@@ -194,9 +194,9 @@ int     SYSTEM_CPU_SWITCHES(AGENT_REQUES
+ 	zbx_uint64_t	value = 0;
+ 	FILE		*f;
+ 
+-	if (NULL == (f = fopen("/proc/stat", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/stat", "r")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/stat: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/stat: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -215,7 +215,7 @@ int     SYSTEM_CPU_SWITCHES(AGENT_REQUES
+ 	zbx_fclose(f);
+ 
+ 	if (SYSINFO_RET_FAIL == ret)
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"ctxt\" in /proc/stat."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"ctxt\" in /dockerhost/proc/stat."));
+ 
+ 	return ret;
+ }
+@@ -227,9 +227,9 @@ int     SYSTEM_CPU_INTR(AGENT_REQUEST *r
+ 	zbx_uint64_t	value = 0;
+ 	FILE		*f;
+ 
+-	if (NULL == (f = fopen("/proc/stat", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/stat", "r")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/stat: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/stat: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -248,7 +248,7 @@ int     SYSTEM_CPU_INTR(AGENT_REQUEST *r
+ 	zbx_fclose(f);
+ 
+ 	if (SYSINFO_RET_FAIL == ret)
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"intr\" in /proc/stat."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"intr\" in /dockerhost/proc/stat."));
+ 
+ 	return ret;
+ }
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/diskio.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/diskio.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/diskio.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/diskio.c	2019-06-18 09:47:35.374863892 +0000
+@@ -22,12 +22,12 @@
+ #include "stats.h"
+ #include "diskdevices.h"
+ 
+-#define ZBX_DEV_PFX	"/dev/"
++#define ZBX_DEV_PFX	"/dockerhost/dev/"
+ #define ZBX_DEV_READ	0
+ #define ZBX_DEV_WRITE	1
+ 
+ #if defined(KERNEL_2_4)
+-#	define INFO_FILE_NAME	"/proc/partitions"
++#	define INFO_FILE_NAME	"/dockerhost/proc/partitions"
+ #	define PARSE(line)	if (sscanf(line, ZBX_FS_UI64 ZBX_FS_UI64 " %*d %s " 		\
+ 					ZBX_FS_UI64 " %*d " ZBX_FS_UI64 " %*d "			\
+ 					ZBX_FS_UI64 " %*d " ZBX_FS_UI64 " %*d %*d %*d %*d",	\
+@@ -40,7 +40,7 @@
+ 				&ds[ZBX_DSTAT_W_SECT]						\
+ 				) != 7) continue
+ #else
+-#	define INFO_FILE_NAME	"/proc/diskstats"
++#	define INFO_FILE_NAME	"/dockerhost/proc/diskstats"
+ #	define PARSE(line)	if (sscanf(line, ZBX_FS_UI64 ZBX_FS_UI64 " %s "			\
+ 					ZBX_FS_UI64 " %*d " ZBX_FS_UI64 " %*d "			\
+ 					ZBX_FS_UI64 " %*d " ZBX_FS_UI64 " %*d %*d %*d %*d",	\
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/diskspace.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/diskspace.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/diskspace.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/diskspace.c	2019-06-18 09:55:29.317671442 +0000
+@@ -130,9 +130,9 @@ int	VFS_FS_DISCOVERY(AGENT_REQUEST *requ
+ 	FILE		*f;
+ 	struct zbx_json	j;
+ 
+-	if (NULL == (f = fopen("/proc/mounts", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/1/mounts", "r")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/mounts: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/1/mounts: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/hardware.h zabbix-3.0.27/src/libs/zbxsysinfo/linux/hardware.h
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/hardware.h	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/hardware.h	2019-06-18 09:57:17.088490818 +0000
+@@ -24,7 +24,7 @@
+ #define SMBIOS_STATUS_ERROR	2
+ #define SMBIOS_STATUS_OK	3
+ 
+-#define DEV_MEM			"/dev/mem"
++#define DEV_MEM			"/dockerhost/dev/mem"
+ #define SYS_TABLE_FILE		"/sys/firmware/dmi/tables/DMI"
+ #define SMBIOS_ENTRY_POINT_SIZE	0x20
+ #define DMI_HEADER_SIZE		4
+@@ -39,7 +39,7 @@
+ 
+ #define CPU_MAX_FREQ_FILE	"/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq"
+ 
+-#define HW_CPU_INFO_FILE	"/proc/cpuinfo"
++#define HW_CPU_INFO_FILE	"/dockerhost/proc/cpuinfo"
+ #define HW_CPU_ALL_CPUS		-1
+ #define HW_CPU_SHOW_ALL		1
+ #define HW_CPU_SHOW_MAXFREQ	2
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/kernel.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/kernel.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/kernel.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/kernel.c	2019-06-18 09:59:35.258977161 +0000
+@@ -43,9 +43,9 @@ int	KERNEL_MAXFILES(AGENT_REQUEST *reque
+ {
+ 	zbx_uint64_t	value;
+ 
+-	if (SYSINFO_RET_FAIL == read_uint64_from_procfs("/proc/sys/fs/file-max", &value))
++	if (SYSINFO_RET_FAIL == read_uint64_from_procfs("/dockerhost/proc/sys/fs/file-max", &value))
+ 	{
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain data from /proc/sys/fs/file-max."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain data from /dockerhost/proc/sys/fs/file-max."));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -57,9 +57,9 @@ int	KERNEL_MAXPROC(AGENT_REQUEST *reques
+ {
+ 	zbx_uint64_t	value;
+ 
+-	if (SYSINFO_RET_FAIL == read_uint64_from_procfs("/proc/sys/kernel/pid_max", &value))
++	if (SYSINFO_RET_FAIL == read_uint64_from_procfs("/dockerhost/proc/sys/kernel/pid_max", &value))
+ 	{
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain data from /proc/sys/kernel/pid_max."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain data from /dockerhost/proc/sys/kernel/pid_max."));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/memory.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/memory.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/memory.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/memory.c	2019-06-18 10:00:35.682315225 +0000
+@@ -73,15 +73,15 @@ static int	VM_MEMORY_CACHED(AGENT_RESULT
+ 	zbx_uint64_t	value;
+ 	int		res;
+ 
+-	if (NULL == (f = fopen("/proc/meminfo", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/meminfo", "r")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/meminfo: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/meminfo: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+ 	if (FAIL == (res = byte_value_from_proc_file(f, "Cached:", NULL, &value)))
+ 	{
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain the value of Cached from /proc/meminfo."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain the value of Cached from /dockerhost/proc/meminfo."));
+ 		goto close;
+ 	}
+ 
+@@ -140,15 +140,15 @@ static int	VM_MEMORY_AVAILABLE(AGENT_RES
+ 
+ 	/* try MemAvailable (present since Linux 3.14), falling back to a calculation based on sysinfo() and Cached */
+ 
+-	if (NULL == (f = fopen("/proc/meminfo", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/meminfo", "r")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/meminfo: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/meminfo: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+ 	if (FAIL == (res = byte_value_from_proc_file(f, "MemAvailable:", "Cached:", &value)))
+ 	{
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain the value of MemAvailable from /proc/meminfo."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain the value of MemAvailable from /dockerhost/proc/meminfo."));
+ 		goto close;
+ 	}
+ 
+@@ -161,7 +161,7 @@ static int	VM_MEMORY_AVAILABLE(AGENT_RES
+ 
+ 	if (FAIL == (res = byte_value_from_proc_file(f, "Cached:", NULL, &value)))
+ 	{
+-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain the value of Cached from /proc/meminfo."));
++		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain the value of Cached from /dockerhost/proc/meminfo."));
+ 		goto close;
+ 	}
+ 
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/net.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/net.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/net.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/net.c	2019-06-18 10:04:39.083648773 +0000
+@@ -211,9 +211,9 @@ static int	get_net_stat(const char *if_n
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+-	if (NULL == (f = fopen("/proc/net/dev", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/1/net/dev", "r")))
+ 	{
+-		*error = zbx_dsprintf(NULL, "Cannot open /proc/net/dev: %s", zbx_strerror(errno));
++		*error = zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/1/net/dev: %s", zbx_strerror(errno));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -251,7 +251,7 @@ static int	get_net_stat(const char *if_n
+ 
+ 	if (SYSINFO_RET_FAIL == ret)
+ 	{
+-		*error = zbx_strdup(NULL, "Cannot find information for this network interface in /proc/net/dev.");
++		*error = zbx_strdup(NULL, "Cannot find information for this network interface in /dockerhost/proc/1/net/dev.");
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -262,7 +262,7 @@ static int	get_net_stat(const char *if_n
+  *                                                                            *
+  * Function: proc_read_tcp_listen                                             *
+  *                                                                            *
+- * Purpose: reads /proc/net/tcp(6) file by chunks until the last line in      *
++ * Purpose: reads /dockerhost/proc/1/net/tcp(6) file by chunks until the last line in      *
+  *          in buffer has non-listening socket state                          *
+  *                                                                            *
+  * Parameters: filename     - [IN] the file to read                           *
+@@ -527,9 +527,9 @@ int	NET_IF_DISCOVERY(AGENT_REQUEST *requ
+ 	FILE		*f;
+ 	struct zbx_json	j;
+ 
+-	if (NULL == (f = fopen("/proc/net/dev", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/1/net/dev", "r")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/net/dev: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc/1/net/dev: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -628,11 +628,11 @@ int	NET_TCP_LISTEN(AGENT_REQUEST *reques
+ 		}
+ 
+ 		zabbix_log(LOG_LEVEL_DEBUG, "netlink interface error: %s", error);
+-		zabbix_log(LOG_LEVEL_DEBUG, "falling back on reading /proc/net/tcp...");
++		zabbix_log(LOG_LEVEL_DEBUG, "falling back on reading /dockerhost/proc/1/net/tcp...");
+ #endif
+ 		buffer = zbx_malloc(NULL, buffer_alloc);
+ 
+-		if (0 < (n = proc_read_tcp_listen("/proc/net/tcp", &buffer, &buffer_alloc)))
++		if (0 < (n = proc_read_tcp_listen("/dockerhost/proc/1/net/tcp", &buffer, &buffer_alloc)))
+ 		{
+ 			ret = SYSINFO_RET_OK;
+ 
+@@ -645,7 +645,7 @@ int	NET_TCP_LISTEN(AGENT_REQUEST *reques
+ 			}
+ 		}
+ 
+-		if (0 < (n = proc_read_tcp_listen("/proc/net/tcp6", &buffer, &buffer_alloc)))
++		if (0 < (n = proc_read_tcp_listen("/dockerhost/proc/1/net/tcp6", &buffer, &buffer_alloc)))
+ 		{
+ 			ret = SYSINFO_RET_OK;
+ 
+@@ -688,7 +688,7 @@ int	NET_UDP_LISTEN(AGENT_REQUEST *reques
+ 
+ 	buffer = zbx_malloc(NULL, buffer_alloc);
+ 
+-	if (0 < (n = proc_read_file("/proc/net/udp", &buffer, &buffer_alloc)))
++	if (0 < (n = proc_read_file("/dockerhost/proc/1/net/udp", &buffer, &buffer_alloc)))
+ 	{
+ 		ret = SYSINFO_RET_OK;
+ 
+@@ -703,7 +703,7 @@ int	NET_UDP_LISTEN(AGENT_REQUEST *reques
+ 		}
+ 	}
+ 
+-	if (0 < (n = proc_read_file("/proc/net/udp6", &buffer, &buffer_alloc)))
++	if (0 < (n = proc_read_file("/dockerhost/proc/1/net/udp6", &buffer, &buffer_alloc)))
+ 	{
+ 		ret = SYSINFO_RET_OK;
+ 
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/proc.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/proc.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/proc.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/proc.c	2019-06-18 13:56:00.407445093 +0000
+@@ -120,7 +120,7 @@ static int	check_procname(FILE *f_cmd, F
+ 	if (NULL == procname || '\0' == *procname)
+ 		return SUCCEED;
+ 
+-	/* process name in /proc/[pid]/status contains limited number of characters */
++	/* process name in /dockerhost/proc/[pid]/status contains limited number of characters */
+ 	if (SUCCEED == cmp_status(f_stat, procname))
+ 		return SUCCEED;
+ 
+@@ -235,7 +235,7 @@ static int	check_procstate(FILE *f_stat,
+  * Function: byte_value_from_proc_file                                        *
+  *                                                                            *
+  * Purpose: Read amount of memory in bytes from a string in /proc file.       *
+- *          For example, reading "VmSize:   176712 kB" from /proc/1/status    *
++ *          For example, reading "VmSize:   176712 kB" from /dockerhost/proc/1/status    *
+  *          will produce a result 176712*1024 = 180953088 bytes               *
+  *                                                                            *
+  * Parameters:                                                                *
+@@ -246,7 +246,7 @@ static int	check_procstate(FILE *f_stat,
+  *                                                                            *
+  * Return value: SUCCEED - successful reading,                                *
+  *               NOTSUPPORTED - the search string was not found. For example, *
+- *                              /proc/NNN/status files for kernel threads do  *
++ *                              /dockerhost/proc/NNN/status files for kernel threads do  *
+  *                              not contain "VmSize:" string.                 *
+  *               FAIL - the search string was found but could not be parsed.  *
+  *                                                                            *
+@@ -323,7 +323,7 @@ static int	get_total_memory(zbx_uint64_t
+ 	FILE	*f;
+ 	int	ret = FAIL;
+ 
+-	if (NULL != (f = fopen("/proc/meminfo", "r")))
++	if (NULL != (f = fopen("/dockerhost/proc/meminfo", "r")))
+ 	{
+ 		ret = byte_value_from_proc_file(f, "MemTotal:", NULL, total_memory);
+ 		zbx_fclose(f);
+@@ -506,9 +506,9 @@ int	PROC_MEM(AGENT_REQUEST *request, AGE
+ 		}
+ 	}
+ 
+-	if (NULL == (dir = opendir("/proc")))
++	if (NULL == (dir = opendir("/dockerhost/proc")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -520,12 +520,12 @@ int	PROC_MEM(AGENT_REQUEST *request, AGE
+ 		if (0 == atoi(entries->d_name))
+ 			continue;
+ 
+-		zbx_snprintf(tmp, sizeof(tmp), "/proc/%s/cmdline", entries->d_name);
++		zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%s/cmdline", entries->d_name);
+ 
+ 		if (NULL == (f_cmd = fopen(tmp, "r")))
+ 			continue;
+ 
+-		zbx_snprintf(tmp, sizeof(tmp), "/proc/%s/status", entries->d_name);
++		zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%s/status", entries->d_name);
+ 
+ 		if (NULL == (f_stat = fopen(tmp, "r")))
+ 			continue;
+@@ -573,7 +573,7 @@ int	PROC_MEM(AGENT_REQUEST *request, AGE
+ 				{
+ 					zbx_uint64_t	m;
+ 
+-					/* VmData, VmStk and VmExe follow in /proc/PID/status file in that order. */
++					/* VmData, VmStk and VmExe follow in /dockerhost/proc/PID/status file in that order. */
+ 					/* Therefore we do not rewind f_stat between calls. */
+ 
+ 					mem_type_search = "VmData:\t";
+@@ -602,7 +602,7 @@ int	PROC_MEM(AGENT_REQUEST *request, AGE
+ 						if (NOTSUPPORTED == res)
+ 						{
+ 							/* NOTSUPPORTED - at least one of data strings not found in */
+-							/* the /proc/PID/status file */
++							/* the /dockerhost/proc/PID/status file */
+ 							continue;
+ 						}
+ 						else	/* FAIL */
+@@ -769,9 +769,9 @@ int	PROC_NUM(AGENT_REQUEST *request, AGE
+ 	if (1 == invalid_user)	/* handle 0 for non-existent user after all parameters have been parsed and validated */
+ 		goto out;
+ 
+-	if (NULL == (dir = opendir("/proc")))
++	if (NULL == (dir = opendir("/dockerhost/proc")))
+ 	{
+-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc: %s", zbx_strerror(errno)));
++		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /dockerhost/proc: %s", zbx_strerror(errno)));
+ 		return SYSINFO_RET_FAIL;
+ 	}
+ 
+@@ -783,12 +783,12 @@ int	PROC_NUM(AGENT_REQUEST *request, AGE
+ 		if (0 == atoi(entries->d_name))
+ 			continue;
+ 
+-		zbx_snprintf(tmp, sizeof(tmp), "/proc/%s/cmdline", entries->d_name);
++		zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%s/cmdline", entries->d_name);
+ 
+ 		if (NULL == (f_cmd = fopen(tmp, "r")))
+ 			continue;
+ 
+-		zbx_snprintf(tmp, sizeof(tmp), "/proc/%s/status", entries->d_name);
++		zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%s/status", entries->d_name);
+ 
+ 		if (NULL == (f_stat = fopen(tmp, "r")))
+ 			continue;
+@@ -837,7 +837,7 @@ static int	proc_get_process_name(pid_t p
+ 	int	n, fd;
+ 	char	tmp[MAX_STRING_LEN], *pend, *pstart;
+ 
+-	zbx_snprintf(tmp, sizeof(tmp), "/proc/%d/stat", (int)pid);
++	zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%d/stat", (int)pid);
+ 
+ 	if (-1 == (fd = open(tmp, O_RDONLY)))
+ 		return FAIL;
+@@ -885,7 +885,7 @@ static int	proc_get_process_cmdline(pid_
+ 	size_t	cmdline_alloc = ZBX_KIBIBYTE;
+ 
+ 	*cmdline_nbytes = 0;
+-	zbx_snprintf(tmp, sizeof(tmp), "/proc/%d/cmdline", (int)pid);
++	zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%d/cmdline", (int)pid);
+ 
+ 	if (-1 == (fd = open(tmp, O_RDONLY)))
+ 		return FAIL;
+@@ -946,7 +946,7 @@ static int	proc_get_process_uid(pid_t pi
+ 	char		tmp[MAX_STRING_LEN];
+ 	zbx_stat_t	st;
+ 
+-	zbx_snprintf(tmp, sizeof(tmp), "/proc/%d", (int)pid);
++	zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%d", (int)pid);
+ 
+ 	if (0 != zbx_stat(tmp, &st))
+ 		return FAIL;
+@@ -989,7 +989,7 @@ static int	proc_read_value(const char *p
+  *                                                                            *
+  * Function: proc_read_cpu_util                                               *
+  *                                                                            *
+- * Purpose: reads process cpu utilization values from /proc/[pid]/stat file   *
++ * Purpose: reads process cpu utilization values from /dockerhost/proc/[pid]/stat file   *
+  *                                                                            *
+  * Parameters: procutil - [IN/OUT] the process cpu utilization data           *
+  *                                                                            *
+@@ -1003,7 +1003,7 @@ static int	proc_read_cpu_util(zbx_procst
+ 	int	n, offset, fd, ret = SUCCEED;
+ 	char	tmp[MAX_STRING_LEN], *ptr;
+ 
+-	zbx_snprintf(tmp, sizeof(tmp), "/proc/%d/stat", (int)procutil->pid);
++	zbx_snprintf(tmp, sizeof(tmp), "/dockerhost/proc/%d/stat", (int)procutil->pid);
+ 
+ 	if (-1 == (fd = open(tmp, O_RDONLY)))
+ 		return -errno;
+@@ -1233,7 +1233,7 @@ out:
+  *                              that must be returned                         *
+  *                                                                            *
+  * Return value: SUCCEED - the system processes were retrieved successfully   *
+- *               FAIL    - failed to open /proc directory                     *
++ *               FAIL    - failed to open /dockerhost/proc directory                     *
+  *                                                                            *
+  ******************************************************************************/
+ int	zbx_proc_get_processes(zbx_vector_ptr_t *processes, unsigned int flags)
+@@ -1247,7 +1247,7 @@ int	zbx_proc_get_processes(zbx_vector_pt
+ 
+ 	zabbix_log(LOG_LEVEL_TRACE, "In %s()", __function_name);
+ 
+-	if (NULL == (dir = opendir("/proc")))
++	if (NULL == (dir = opendir("/dockerhost/proc")))
+ 		goto out;
+ 
+ 	while (NULL != (entries = readdir(dir)))
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/sensors.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/sensors.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/sensors.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/sensors.c	2019-06-18 10:09:41.036340890 +0000
+@@ -21,7 +21,7 @@
+ #include "zbxregexp.h"
+ 
+ #ifdef KERNEL_2_4
+-#define DEVICE_DIR	"/proc/sys/dev/sensors"
++#define DEVICE_DIR	"/dockerhost/proc/sys/dev/sensors"
+ #else
+ #define DEVICE_DIR	"/sys/class/hwmon"
+ static char	*locations[] = {"", "/device", NULL};
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/software.h zabbix-3.0.27/src/libs/zbxsysinfo/linux/software.h
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/software.h	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/software.h	2019-06-18 10:25:58.745616141 +0000
+@@ -20,8 +20,8 @@
+ #ifndef ZABBIX_SOFTWARE_H
+ #define ZABBIX_SOFTWARE_H
+ 
+-#define SW_OS_FULL	"/proc/version"
+-#define SW_OS_SHORT	"/proc/version_signature"
++#define SW_OS_FULL	"/dockerhost/proc/version"
++#define SW_OS_SHORT	"/dockerhost/proc/version_signature"
+ #define SW_OS_NAME	"/etc/issue.net"
+ 
+ typedef struct
+diff -uprN zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/swap.c zabbix-3.0.27/src/libs/zbxsysinfo/linux/swap.c
+--- zabbix-3.0.27.org/src/libs/zbxsysinfo/linux/swap.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/libs/zbxsysinfo/linux/swap.c	2019-06-18 10:22:28.699919140 +0000
+@@ -78,7 +78,7 @@ typedef struct
+ swap_stat_t;
+ 
+ #ifdef KERNEL_2_4
+-#	define INFO_FILE_NAME	"/proc/partitions"
++#	define INFO_FILE_NAME	"/dockerhost/proc/partitions"
+ #	define PARSE(line)								\
+ 											\
+ 		if (6 != sscanf(line, "%d %d %*d %*s "					\
+@@ -92,7 +92,7 @@ swap_stat_t;
+ 				&result->wsect		/* wsect */			\
+ 				)) continue
+ #else
+-#	define INFO_FILE_NAME	"/proc/diskstats"
++#	define INFO_FILE_NAME	"/dockerhost/proc/diskstats"
+ #	define PARSE(line)								\
+ 											\
+ 		if (6 != sscanf(line, "%d %d %*s "					\
+@@ -158,9 +158,9 @@ static int	get_swap_pages(swap_stat_t *r
+ 	FILE	*f;
+ 
+ #ifdef KERNEL_2_4
+-	if (NULL != (f = fopen("/proc/stat", "r")))
++	if (NULL != (f = fopen("/dockerhost/proc/stat", "r")))
+ #else
+-	if (NULL != (f = fopen("/proc/vmstat", "r")))
++	if (NULL != (f = fopen("/dockerhost/proc/vmstat", "r")))
+ #endif
+ 	{
+ 		while (NULL != fgets(line, sizeof(line), f))
+@@ -215,15 +215,15 @@ static int	get_swap_stat(const char *swa
+ 		ret = get_swap_pages(result);
+ 		swapdev = NULL;
+ 	}
+-	else if (0 != strncmp(swapdev, "/dev/", 5))
++	else if (0 != strncmp(swapdev, "/dockerhost/dev/", 5))
+ 		offset = 5;
+ 
+-	if (NULL == (f = fopen("/proc/swaps", "r")))
++	if (NULL == (f = fopen("/dockerhost/proc/swaps", "r")))
+ 		return ret;
+ 
+ 	while (NULL != fgets(line, sizeof(line), f))
+ 	{
+-		if (0 != strncmp(line, "/dev/", 5))
++		if (0 != strncmp(line, "/dockerhost/dev/", 5))
+ 			continue;
+ 
+ 		if (NULL == (s = strchr(line, ' ')))
+diff -uprN zabbix-3.0.27.org/src/zabbix_agent/cpustat.c zabbix-3.0.27/src/zabbix_agent/cpustat.c
+--- zabbix-3.0.27.org/src/zabbix_agent/cpustat.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/zabbix_agent/cpustat.c	2019-06-18 10:24:00.134916017 +0000
+@@ -314,7 +314,7 @@ static void	update_cpustats(ZBX_CPUS_STA
+ 	FILE		*file;
+ 	char		line[1024];
+ 	unsigned char	*cpu_status = NULL;
+-	const char	*filename = "/proc/stat";
++	const char	*filename = "/dockerhost/proc/stat";
+ 
+ #elif defined(HAVE_SYS_PSTAT_H)
+ 
+diff -uprN zabbix-3.0.27.org/src/zabbix_agent/stats.c zabbix-3.0.27/src/zabbix_agent/stats.c
+--- zabbix-3.0.27.org/src/zabbix_agent/stats.c	2019-04-17 13:45:46.000000000 +0000
++++ zabbix-3.0.27/src/zabbix_agent/stats.c	2019-06-18 10:24:56.294300306 +0000
+@@ -103,7 +103,7 @@ static int	zbx_get_cpu_num()
+ 	FILE	*f = NULL;
+ 	int	ncpu = 0;
+ 
+-	if (NULL == (file = fopen("/proc/cpuinfo", "r")))
++	if (NULL == (file = fopen("/dockerhost/proc/cpuinfo", "r")))
+ 		goto return_one;
+ 
+ 	while (NULL != fgets(line, 1024, file))
